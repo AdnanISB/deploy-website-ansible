@@ -1,7 +1,21 @@
 ---
-- name: restart web
-  service:
-    name: "{{ web_service_name }}"
-    state: restarted
-    enabled: true
+- name: restart web 
+  block:
+    - name: Test nginx configuration
+      command: nginx -t
+      register: nginx_test
+      ignore_errors: yes
+
+    - name: Fail if nginx config test fails
+      fail:
+        msg: "NGINX configuration test failed! Fix your nginx.conf template."
+      when: nginx_test.rc != 0
+
+    - name: Reload nginx if config is OK
+      service:
+        name: "{{ web_service_name }}"
+        state: reloaded
+        enabled: true
+      when: nginx_test.rc == 0
+
 
